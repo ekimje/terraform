@@ -1,7 +1,7 @@
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
   tags = {
-    name = "main-vpc"
+    Name = "main-vpc"
   }
 }
 
@@ -12,7 +12,7 @@ resource "aws_subnet" "subnet1" {
   availability_zone       = "ap-northeast-2a"
 
   tags = {
-    name = "subnet1"
+    Name = "subnet1"
   }
 }
 
@@ -23,7 +23,7 @@ resource "aws_subnet" "subnet2" {
   availability_zone       = "ap-northeast-2b"
 
   tags = {
-    name = "subnet2"
+    Name = "subnet2"
   }
 }
 
@@ -33,7 +33,7 @@ resource "aws_subnet" "private_subnet1" {
   availability_zone = "ap-northeast-2a"
 
   tags = {
-    name = "private-subnet1"
+    Name = "private-subnet1"
   }
 }
 
@@ -43,6 +43,6 @@ resource "aws_subnet" "private_subnet2" {
   availability_zone = "ap-northeast-2b"
 
   tags = {
-    name = "private-subnet2"
+    Name = "private-subnet2"
   }
 }
