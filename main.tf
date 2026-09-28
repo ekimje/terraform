@@ -2,8 +2,9 @@ provider "aws" {
   region = "ap-northeast-2"
 }
 
-data "aws_caller_identity" "me" {}
+// 연결 확인용
+# data "aws_caller_identity" "me" {}
 
-output "account_id" {
-  value = data.aws_caller_identity.me.account_id
-}
+# output "account_id" {
+#   value = data.aws_caller_identity.me.account_id
+# }

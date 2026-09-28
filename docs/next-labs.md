@@ -35,7 +35,7 @@
 Ansible 인벤토리나 다른 Terraform 프로젝트가 이 값을 가져다 씁니다.
 ```hcl
 output "vpc_id"             { value = aws_vpc.main.id }
-output "public_subnet_ids"  { value = [aws_subnet.subnet1.id, aws_subnet.subnet2.id] }
+output "public_subnet_ids"  { value = [aws_subnet.public_subnet1.id, aws_subnet.public_subnet2.id] }
 output "private_subnet_ids" { value = [aws_subnet.private_subnet1.id, aws_subnet.private_subnet2.id] }
 output "nat_public_ip"      { value = aws_eip.nat_eip.public_ip }
 ```
@@ -140,7 +140,7 @@ data "aws_ami" "al2023" {
 resource "aws_instance" "bastion" {
   ami                    = data.aws_ami.al2023.id
   instance_type          = var.instance_type
-  subnet_id              = aws_subnet.subnet1.id          # 퍼블릭
+  subnet_id              = aws_subnet.public_subnet1.id          # 퍼블릭
   vpc_security_group_ids = [aws_security_group.bastion.id]
   key_name               = aws_key_pair.lab.key_name
   tags = { Name = "bastion", Role = "bastion" }
@@ -265,9 +265,9 @@ remote_user       = ec2-user
 
 | 실습 | 지금 네트워크에서 쓰는 부분 | 추가할 리소스 |
 |---|---|---|
-| 웹 서버 이중화 | 퍼블릭 subnet1·2에 ALB, 프라이빗에 EC2 | `aws_lb`, `aws_lb_target_group`, `aws_lb_listener` |
-| 오토 스케일링 | 프라이빗 subnet1·2 | `aws_launch_template`, `aws_autoscaling_group` |
-| RDS (MySQL 등) | 프라이빗 subnet1·2 (서로 다른 AZ 2개 필요 → 이미 충족) | `aws_db_subnet_group`, `aws_db_instance`, DB용 SG(3306) |
+| 웹 서버 이중화 | 퍼블릭 public_subnet1·2에 ALB, 프라이빗에 EC2 | `aws_lb`, `aws_lb_target_group`, `aws_lb_listener` |
+| 오토 스케일링 | 프라이빗 private_subnet1·2 | `aws_launch_template`, `aws_autoscaling_group` |
+| RDS (MySQL 등) | 프라이빗 private_subnet1·2 (서로 다른 AZ 2개 필요 → 이미 충족) | `aws_db_subnet_group`, `aws_db_instance`, DB용 SG(3306) |
 | NAT 비용 줄이기 | private_rt | `aws_vpc_endpoint` (S3 Gateway 엔드포인트는 **무료**) |
 | 트래픽 분석 | VPC | `aws_flow_log` + CloudWatch Logs |
 | EKS (쿠버네티스) | 서브넷 4개 모두 | 서브넷에 `kubernetes.io/role/elb` 태그, `aws_eks_cluster` |
