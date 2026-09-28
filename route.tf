@@ -1,0 +1,17 @@
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "public-route-table"
+  }
+}
+
+resource "aws_route_table_association" "public_rt_assoc1" {
+  subnet_id      = aws_subnet.subnet1.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+resource "aws_route_table_association" "public_rt_assoc2" {
+  subnet_id      = aws_subnet.subnet2.id
+  route_table_id = aws_route_table.public_rt.id
+}
