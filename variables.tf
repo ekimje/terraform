@@ -25,9 +25,3 @@ variable "linux_key_name" {
   type        = string
   default     = "linux"
 }
-
-variable "windows_key_name" {
-  description = "Windows EC2에 붙일 기존 키 페어 이름. 비밀번호 복호화에 RSA 개인키(.pem)가 필요"
-  type        = string
-  default     = "windows"
-}

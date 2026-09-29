@@ -12,5 +12,5 @@ output "windows_public_ip" {
 
 # 비밀번호를 state에 남기지 않도록 복호화는 로컬에서 AWS CLI로 수행
 output "windows_password_command" {
-  value = "aws ec2 get-password-data --instance-id ${aws_instance.windows.id} --priv-launch-key ${var.windows_key_name}.pem --query PasswordData --output text"
+  value = "aws ec2 get-password-data --instance-id ${aws_instance.windows.id} --priv-launch-key windows.pem --query PasswordData --output text"
 }
