@@ -77,6 +77,7 @@ Linux EC2에 장애를 일부러 발생시키고, **증상만 보고** 원인을
 | 2 | [설정 변경 후 웹사이트 접속 불가](troubleshooting/02-config-syntax.md) | nginx 설정 `;` 누락 + 검사 없이 restart | `journalctl`, `nginx -t`, `reload` vs `restart` |
 | 3 | [배포 후 403 Forbidden](troubleshooting/03-permission.md) | `mv`로 600 권한이 그대로 따라옴 | error/access log, `ls -l`, `ps`, `install` |
 | 4 | [야간 점검 후 홈페이지가 이상한 페이지로 바뀜](troubleshooting/04-port-conflict.md) | 다른 웹 서버(Apache)가 80번 포트 선점 | `ss -tlnp`, `dnf history`, `systemctl disable`, 재부팅 검증 |
+| 5 | [서버는 정상인데 외부에서 접속 불가](troubleshooting/05-network.md) | 보안 그룹을 Terraform 밖에서 수정 (drift) | `Test-NetConnection`, `tcpdump`, `terraform plan/apply`, CloudTrail |
 
 전체 목록과 진행 방법: [troubleshooting/README.md](troubleshooting/README.md)
 
@@ -135,4 +136,5 @@ terraform destroy
 - [ ] Ansible로 nginx 구성 자동화 (`validate: nginx -t -c %s` 적용)
 - [ ] CloudWatch Agent와 디스크 사용률 알람 (장애 #1 재발 방지)
 - [ ] GitHub Actions로 `terraform fmt`, `validate`, `plan` 자동 실행
-- [ ] 장애 대응 실습 5~6 (네트워크와 서비스 구분, 재부팅 후 미기동)
+- [ ] 장애 대응 실습 6 (재부팅 후 서비스 미기동)
+- [ ] root 액세스 키 대신 IAM 사용자 / IAM Identity Center 사용 (장애 #5에서 발견)
