@@ -137,5 +137,4 @@ terraform destroy
 - [ ] Ansible로 nginx 구성 자동화 (`validate: nginx -t -c %s` 적용)
 - [ ] CloudWatch Agent와 디스크 사용률 알람 (장애 #1 재발 방지)
 - [ ] GitHub Actions로 `terraform fmt`, `validate`, `plan` 자동 실행
-- [ ] 장애 대응 실습 6 (재부팅 후 서비스 미기동)
 - [ ] root 액세스 키 대신 IAM 사용자 / IAM Identity Center 사용 (장애 #5에서 발견)
