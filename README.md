@@ -78,6 +78,7 @@ Linux EC2에 장애를 일부러 발생시키고, **증상만 보고** 원인을
 | 3 | [배포 후 403 Forbidden](troubleshooting/03-permission.md) | `mv`로 600 권한이 그대로 따라옴 | error/access log, `ls -l`, `ps`, `install` |
 | 4 | [야간 점검 후 홈페이지가 이상한 페이지로 바뀜](troubleshooting/04-port-conflict.md) | 다른 웹 서버(Apache)가 80번 포트 선점 | `ss -tlnp`, `dnf history`, `systemctl disable`, 재부팅 검증 |
 | 5 | [서버는 정상인데 외부에서 접속 불가](troubleshooting/05-network.md) | 보안 그룹을 Terraform 밖에서 수정 (drift) | `Test-NetConnection`, `tcpdump`, `terraform plan/apply`, CloudTrail |
+| 6 | [정기 재부팅 후 웹 서버가 켜지지 않음](troubleshooting/06-boot.md) | 로그 폴더를 재부팅 시 비워지는 `/run`(tmpfs)에 둠 | `journalctl -b -1`, `findmnt`, `df`, 재부팅 검증 |
 
 전체 목록과 진행 방법: [troubleshooting/README.md](troubleshooting/README.md)
 
