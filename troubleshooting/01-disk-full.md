@@ -5,7 +5,7 @@
 | 대상 서버 | `linux-ec2` (3.35.173.174, Amazon Linux 2023) |
 | 발생 시각 | 2026-09-29 17:20 KST |
 | 영향 | 배포, 설정 변경, 패키지 설치 불가 |
-| 상태 | 🟢 해결 (2026-09-29 18:02 KST) |
+| 상태 | 🟢 해결 (2026-09-29 18:02 KST), 재발 방지 적용 (2026-10-01 10:00 KST) |
 
 ## 상황
 
@@ -28,7 +28,7 @@
 
 - [x] 원인 찾기: 무엇이, 어디서 문제를 일으키는지
 - [x] 서비스 정상화: 위 증상의 명령이 모두 성공해야 함
-- [ ] 재발 방지: 같은 일이 다시 생기지 않도록 조치 (심화)
+- [x] 재발 방지: 같은 일이 다시 생기지 않도록 조치 (심화)
 
 ## 힌트
 
@@ -82,7 +82,7 @@
 | **원인** | `/var/log/myapp/app-debug.log`(6.3GB)가 계속 커져서 루트 디스크(8GB)를 100% 채움 |
 | **영향** | 새 파일 생성 불가 → 배포, 설정 변경, 패키지 설치 실패. 이미 떠 있는 nginx는 파일을 읽기만 해서 웹은 정상 |
 | **조치** | 디버그 로그 파일 삭제 → 디스크 사용률 100% → 21% |
-| **재발 방지** | 미완료 (아래 참고) |
+| **재발 방지** | logrotate로 100MB가 넘으면 압축 후 회전하고 7개만 보관. 검사 주기를 하루 1회에서 매시간으로 변경 |
 
 ### 1단계. 증상 재현: 디스크 문제인지 확인
 
@@ -134,26 +134,92 @@ cat ~/test.txt
   ```
 - **먼저 알리기:** 삭제 전에 개발팀에 "디버그 로그가 6GB라 정리합니다"라고 공유하고, 필요하면 일부를 백업합니다. 예: `tail -n 1000 app-debug.log > /tmp/debug-tail.log`
 
-### 재발 방지 (미완료)
+### 6단계. 재발 방지: logrotate 설정
 
-로그가 무한히 커지지 않도록 `logrotate` 설정을 추가하면 됩니다. 현재 `/etc/logrotate.d/`에는 myapp 설정이 없습니다.
+> 재발 방지는 2026-10-01에 인프라를 다시 `apply`한 뒤 적용했습니다. 장애 당시처럼 로그 파일을 **열어 둔 채 계속 쓰는** 앱(`myapp.service`)을 띄워 놓고 검증했습니다.
+
+처음에는 아래처럼 `maxsize`만 넣으면 된다고 생각했습니다. 그런데 서버를 확인해 보니 이것만으로는 이번 장애를 막지 못합니다.
+
+| 확인한 사실 | 문제 |
+|---|---|
+| AL2023에서는 cron이 아니라 `logrotate.timer`가 logrotate를 실행하고, 실행 주기는 `OnCalendar=daily`(하루 1회, 자정)임 | `maxsize 100M`은 logrotate가 **실행될 때만** 검사함. 로그가 하루 안에 6GB까지 커지면 다음 자정이 오기 전에 디스크가 가득 참 |
+| `/etc/logrotate.conf`에 `dateext`가 켜져 있음 | 회전한 파일 이름이 `app-debug.log-20261001`처럼 날짜로 정해짐. 하루에 두 번째 회전부터는 이름이 겹쳐서 회전을 **건너뜀** |
+
+그래서 설정 파일과 함께 타이머 주기도 바꿨습니다.
 
 ```bash
+# 1) myapp 로그 회전 규칙
 sudo tee /etc/logrotate.d/myapp <<'CONF'
 /var/log/myapp/*.log {
     daily
-    rotate 7
     maxsize 100M
+    rotate 7
+    nodateext
     compress
     missingok
     notifempty
     copytruncate
 }
 CONF
-sudo logrotate -d /etc/logrotate.d/myapp   # 문법 확인 (실제로 실행되지는 않음)
+
+# 2) logrotate 실행 주기: 매일 → 매시간 (원본 유닛 파일은 그대로 두고 drop-in으로 덮어쓰기)
+sudo mkdir -p /etc/systemd/system/logrotate.timer.d
+sudo tee /etc/systemd/system/logrotate.timer.d/hourly.conf <<'CONF'
+[Timer]
+OnCalendar=
+OnCalendar=hourly
+AccuracySec=1m
+CONF
+sudo systemctl daemon-reload
+
+# 3) 확인
+sudo logrotate -d /etc/logrotate.d/myapp 2>&1 | grep -E "rotating pattern|rotated earlier|error"   # 문법 확인 (실제로 회전하지는 않음)
+systemctl list-timers logrotate.timer        # NEXT가 다음 정각인지 확인
 ```
 
-모니터링도 추가하면 좋습니다. CloudWatch Agent로 디스크 사용률을 수집하고, 80%가 넘으면 CloudWatch 알람으로 알림을 받습니다.
+| 옵션 | 의미 |
+|---|---|
+| `daily` + `maxsize 100M` | 하루에 한 번 회전하고, 그 전이라도 100MB를 넘으면 바로 회전 |
+| `rotate 7` | 회전한 파일은 7개까지만 보관하고 오래된 것부터 삭제 → 로그가 쓰는 용량에 상한이 생김 |
+| `nodateext` | 날짜 대신 `.1`, `.2` 번호를 붙임 → 하루에 여러 번 회전해도 이름이 겹치지 않음 |
+| `compress` | 회전한 파일을 gzip으로 압축 |
+| `missingok`, `notifempty` | 파일이 없거나 비어 있으면 에러 없이 넘어감 |
+| `copytruncate` | 파일을 복사한 뒤 원본을 0으로 비움 → 앱이 파일을 열어 둔 채 계속 써도 됨 (아래 설명) |
+| `OnCalendar=` (빈 값) | 원래 설정인 `daily`를 먼저 지움. 이 줄이 없으면 `daily`와 `hourly`가 둘 다 적용됨 |
+
+![6단계: 설정과 타이머](images/01-fix-4-logrotate.png)
+
+**왜 `copytruncate`인가?** logrotate는 기본적으로 파일 이름을 `app-debug.log.1`로 **바꿉니다.** 그런데 앱은 이름이 아니라 이미 열어 둔 파일을 붙잡고 있어서, 이름이 바뀐 `.1` 파일에 계속 씁니다. 결국 새 파일은 비어 있고 용량도 줄지 않습니다. nginx처럼 신호를 받으면 로그 파일을 다시 여는 앱은 `postrotate`로 신호를 보내면 됩니다. myapp은 그런 기능이 없어서 `copytruncate`를 썼습니다.
+
+### 7단계. 검증: 100MB를 넘긴 뒤 실제 타이머 경로로 회전
+
+앱이 계속 쓰고 있는 상태에서 디버그 로그를 150MB로 키운 뒤, 타이머가 실행하는 것과 같은 `logrotate.service`를 직접 실행했습니다. `logrotate -f`(강제 회전)는 쓰지 않았습니다. 강제로 돌리면 `maxsize` 조건이 제대로 동작하는지 확인할 수 없기 때문입니다.
+
+```bash
+# 150MB짜리 로그 만들기
+yes "DEBUG request dump payload=0123456789abcdef" | head -c 150M | sudo tee -a /var/log/myapp/app-debug.log >/dev/null
+ls -lh /var/log/myapp                       # 회전 전
+
+sudo systemctl start logrotate.service      # 타이머가 매시간 실행하는 것과 같은 서비스
+ls -lh /var/log/myapp                       # 회전 후
+tail -n 2 /var/log/myapp/app-debug.log      # 앱이 원래 파일에 계속 쓰는지
+sudo lsof +L1 | grep myapp || echo none     # 지워졌는데 열려 있는 파일이 없는지
+```
+
+같은 검증을 두 번 했습니다. 아래 결과와 캡처는 **두 번째** 결과입니다.
+
+| 확인 항목 | 결과 |
+|---|---|
+| `app-debug.log` | 151M → 53B (비워진 뒤 앱이 새 줄을 계속 씀) |
+| `app-debug.log.1.gz` | 448K: 방금 회전한 로그 (같은 줄이 반복된 로그라 압축률이 매우 높음) |
+| `app-debug.log.2.gz` | 522K: 첫 번째 검증 때 회전한 로그가 한 칸 밀려남 → **하루에 두 번 회전해도 이름이 겹치지 않음** (`nodateext` 효과) |
+| `app.log` | 100MB 미만이고 아직 하루가 안 지나서 회전하지 않음 (정상) |
+| `lsof +L1` | `none` → 지워졌는데 열려 있는 파일이 없으므로 용량이 실제로 돌아옴 |
+| 타이머 | 01:00 UTC 정각에 `logrotate.service`가 자동으로 실행된 것을 `journalctl -u logrotate.service`로 확인 (6단계 캡처의 `LAST` 열) |
+
+![7단계: 회전 검증](images/01-fix-5-rotate.png)
+
+**남은 한계:** 매시간 검사하므로 **한 시간 안에** 디스크 여유 공간(약 6GB)보다 많이 쓰는 앱은 여전히 막지 못합니다. 그래서 디스크 사용률 모니터링(CloudWatch Agent + 알람)도 함께 필요합니다. 근본적으로는 개발팀이 운영 서버에서 디버그 로그 레벨을 끄도록 요청해야 합니다.
 
 ### 생각해볼 점: 답
 
