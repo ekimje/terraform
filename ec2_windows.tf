@@ -21,6 +21,7 @@ resource "aws_instance" "windows" {
   subnet_id              = aws_subnet.public_subnet2.id
   vpc_security_group_ids = [aws_security_group.windows_sg.id]
   key_name               = aws_key_pair.windows.key_name
+  count                  = var.enable_windows ? 1 : 0
 
   # IMDSv2만 허용
   metadata_options {

@@ -25,3 +25,21 @@ variable "linux_key_name" {
   type        = string
   default     = "linux"
 }
+
+variable "enable_nat" {
+  description = "NAT Gateway 생성 여부"
+  type        = bool
+  default     = false
+}
+
+variable "enable_windows" {
+  description = "Windows EC2 생성 여부"
+  type        = bool
+  default     = false
+}
+
+variable "monitoring_instance_type" {
+  description = "모니터링 EC2 인스턴스 타입"
+  type        = string
+  default     = "t3.small"
+}
