@@ -11,6 +11,7 @@ resource "aws_instance" "linux" {
   ami                    = data.aws_ssm_parameter.al2023_ami.insecure_value
   instance_type          = var.linux_instance_type
   subnet_id              = aws_subnet.public_subnet1.id
+  private_ip = "10.0.1.10"
   vpc_security_group_ids = [aws_security_group.linux_sg.id]
   key_name               = var.linux_key_name
 

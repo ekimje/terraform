@@ -23,6 +23,22 @@ resource "aws_security_group" "linux_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "node_exporter from monitoring"
+    from_port = 9100
+    to_port = 9100
+    protocol = "tcp"
+    security_groups = [aws_security_group.monitoring_sg.id]
+  }
+
+  ingress {
+    description = "nginx exporter from monitoring"
+    from_port = 9113
+    to_port = 9113
+    protocol = "tcp"
+    security_groups = [aws_security_group.monitoring_sg.id]
+  }
+
   egress {
     description = "All outbound"
     from_port   = 0
@@ -55,22 +71,6 @@ resource "aws_security_group" "windows_sg" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    description = "node_exporter from monitoring"
-    from_port = 9100
-    to_port = 9100
-    protocol = "tcp"
-    cidr_blocks = [aws_security_group.monitoring_sg.id]
-  }
-
-  ingress {
-    description = "nginx exporter from monitoring"
-    from_port = 9113
-    to_port = 9113
-    protocol = "tcp"
-    cidr_blocks = [aws_security_group.monitoring_sg.id]
   }
 
   egress {

@@ -1,0 +1,26 @@
+groups:
+  - name: server
+    rules:
+      - alert: DiskUsageHigh
+        expr: (1-node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 >85
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "디스크 사용량 85% 초과"
+
+      - alert: nginx-down
+        expr: nginx_up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "nginx 응답 없음"
+
+      - alert: TargetDown
+        expr: up == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "수집 대상 없음"

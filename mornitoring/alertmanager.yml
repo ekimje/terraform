@@ -1,0 +1,10 @@
+route:
+  receiver: discord
+  group_wait: 15s
+  group_interval: 15s # 변화가 생기면 15초 안에 보내도록.
+  repeat_interval: 1h
+
+receivers:
+  - name: discord
+    discord_configs:
+      - webhook_url: https://discord.com/api/webhooks/1562752560753016962/Sql8q-vFPl8sZHC1hYrxIuO8kGGShbszGyZmrGtUGfuQJtAxQdAWUSa4hg2KA0Oa6bOC
