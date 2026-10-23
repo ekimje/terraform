@@ -9,18 +9,30 @@
    cd %USERPROFILE%\Desktop
    ssh -i linux.pem ec2-user@<linux_public_ip>
    ```
-   `terraform destroy` 후 다시 `apply`하면 IP가 바뀝니다. 현재 IP는 `terraform output linux_public_ip`로 확인하세요. 각 시나리오 문서에는 실습 당시의 IP가 적혀 있습니다.
+   `terraform destroy` 후 다시 `apply`하면 공인 IP가 바뀝니다. 현재 IP는 `terraform output linux_public_ip`로 확인하세요. 각 시나리오 문서에는 실습 당시의 IP가 적혀 있습니다.
 3. 막히면 문서의 힌트를 **1단계씩** 펼쳐 봅니다.
 4. 해결했으면 문서 맨 아래 **해결 기록**을 채웁니다. 실무의 장애 보고서(포스트모템) 연습입니다.
 5. 해결 확인이 끝나면 다음 시나리오로 넘어갑니다.
 
+## 알림 기반 실습 (7번부터)
+
+7번부터는 모니터링 서버(Prometheus, Alertmanager)를 붙인 상태에서 진행했습니다. 장애 스크립트의 내용을 보지 않고 실행한 뒤, **Discord 알림만 보고** 진단을 시작했습니다.
+
+알림 대응 순서:
+1. 알림의 이름, `instance`, `severity`를 먼저 읽는다
+2. 접속한 서버의 프롬프트(`ip-...`)가 `instance`와 같은지 확인한다
+3. 조치하기 전에 화면에서 단서를 정리하고, 서버 시간대(UTC)를 확인한다
+4. 복구 후에도 몇 분 동안 재발하지 않는지 지켜본다
+
 ## 시나리오
 
-| # | 시나리오 | 상태 |
-|---|---|---|
-| 1 | [디스크 가득 참](01-disk-full.md) | 🟢 해결 |
-| 2 | [설정 파일 문법 오류](02-config-syntax.md) | 🟢 해결 |
-| 3 | [권한 문제 (403 Forbidden)](03-permission.md) | 🟢 해결 |
-| 4 | [포트 충돌](04-port-conflict.md) | 🟢 해결 |
-| 5 | [접속 불가 (네트워크 vs 서비스)](05-network.md) | 🟢 해결 |
-| 6 | [재부팅 후 서비스 미기동](06-boot.md) | 🟢 해결 |
+| # | 시나리오 | 감지 | 상태 |
+|---|---|---|---|
+| 1 | [디스크 가득 참](01-disk-full.md) | 사용자 문의 | 🟢 해결 |
+| 2 | [설정 파일 문법 오류](02-config-syntax.md) | 사용자 문의 | 🟢 해결 |
+| 3 | [권한 문제 (403 Forbidden)](03-permission.md) | 사용자 문의 | 🟢 해결 |
+| 4 | [포트 충돌](04-port-conflict.md) | 사용자 문의 | 🟢 해결 |
+| 5 | [접속 불가 (네트워크 vs 서비스)](05-network.md) | 사용자 문의 | 🟢 해결 |
+| 6 | [재부팅 후 서비스 미기동](06-boot.md) | 사용자 문의 | 🟢 해결 |
+| 7 | [디스크 사용량 경고 (배치 서비스)](07-disk-alert.md) | 알림, 발생 후 2분 | 🟢 해결 (34분) |
+| 8 | [nginx 주기적 중단 (정리 작업 타이머)](08-nginx-periodic-stop.md) | 알림, 발생 후 2분 | 🟢 해결 (27분) |
