@@ -5,6 +5,9 @@ Terraform으로 서울 리전에 VPC 네트워크와 EC2를 코드로 구축하�
 
 이후 **Prometheus, Grafana, Alertmanager로 모니터링 서버를 추가**해서, 고객 문의로 알게 되던 장애를 **알림으로 먼저 감지**하도록 확장했습니다.
 
+- 장애 대응 보고서 8건: [장애 대응 실습](#장애-대응-실습-troubleshooting)
+- 후속 프로젝트: [aws-network-incident-monitoring-lab](https://github.com/ekimje/aws-network-incident-monitoring-lab) — 이 실습에서 부족했던 점(네트워크 분리, 계층별 방화벽, Ansible 구성 관리, 실제 서비스 장애)을 반영해 새로 설계
+
 ![Terraform](https://img.shields.io/badge/Terraform-%E2%89%A51.10-7B42BC?logo=terraform&logoColor=white)
 ![AWS](https://img.shields.io/badge/AWS-ap--northeast--2-FF9900?logo=amazonwebservices&logoColor=white)
 ![Amazon Linux](https://img.shields.io/badge/Amazon%20Linux-2023-232F3E)
@@ -34,7 +37,7 @@ flowchart TB
                 win["EC2 Windows Server 2022<br/>(enable_windows, 기본 꺼짐)"]
             end
             subgraph priv["private-subnet1/2 · 10.0.3.0/24, 10.0.4.0/24"]
-                empty["(확장 예정)"]
+                empty["(사용 안 함)"]
             end
         end
     end
@@ -168,8 +171,8 @@ Linux EC2에 장애를 일부러 발생시키고, **증상이나 알림만 보�
 │   └── images/              # 모니터링 화면 캡처
 ├── docs/
 │   ├── resources.md             # 리소스별 역할과 참조 관계 설명
-│   ├── next-labs.md             # 다음 실습 계획 (Ansible 등)
-│   └── server-monitoring-plan.md # 모니터링 확장 계획서
+│   ├── next-labs.md             # 다음 실습 계획 (이전 계획, 후속 프로젝트로 이어짐)
+│   └── server-monitoring-plan.md # 모니터링 확장 계획서 (이 저장소에 반영 완료)
 └── troubleshooting/      # 장애 대응 보고서와 캡처 이미지
 ```
 
@@ -217,17 +220,16 @@ docker compose ps              # prometheus, grafana, alertmanager 3개 Up
 terraform destroy
 ```
 
-## 개선 예정
+## 후속 프로젝트
 
-- [x] ~~CloudWatch Agent와 디스크 사용률 알람 (장애 #1 재발 방지)~~ → Prometheus + Alertmanager로 디스크 알림 구현 (장애 #7에서 검증)
-- [x] ~~장애 대응 실습 5~6~~ → 완료, 7~8은 알림 기반으로 추가
-- [ ] 웹 서버를 프라이빗 서브넷으로 옮기고 ALB 뒤에 배치 (현재 프라이빗 서브넷과 NAT는 확장용으로만 만들어져 있음)
-- [ ] Ansible로 nginx 구성 자동화 (`validate: nginx -t -c %s` 적용)
-- [ ] GitHub Actions로 `terraform fmt`, `validate`, `plan` 자동 실행
-- [ ] root 액세스 키 대신 IAM 사용자 / IAM Identity Center 사용 (장애 #5에서 발견)
-- [ ] 모니터링 스택 배포 자동화: `templatefile`로 user_data에서 설정 파일 생성과 `docker compose up`까지 처리
-- [ ] Prometheus `--web.external-url` 설정 (알림의 Source 링크가 컨테이너 이름으로 나와 열리지 않음)
-- [ ] Grafana 데이터 소스와 대시보드를 provisioning으로 코드화, 데이터 볼륨 연결
-- [ ] 디스크 알림을 70% warning / 85% critical 두 단계로 분리, CPU·메모리 알림 추가
-- [ ] 알림별 대응 매뉴얼(런북) 작성
-- [ ] httpbin + k6로 응답 지연, 500 에러, 트래픽 급증 같은 서비스 레벨 장애 실습
+이 저장소는 모니터링과 장애 대응 보고서 8건까지로 마무리했습니다.
+남은 개선 사항은 후속 프로젝트 [aws-network-incident-monitoring-lab](https://github.com/ekimje/aws-network-incident-monitoring-lab)에서 처음부터 설계에 반영합니다.
+
+| 이 저장소에서 남은 과제 | 후속 프로젝트에서 |
+|---|---|
+| 프라이빗 서브넷을 만들기만 하고 쓰지 않음 | DB 서버를 private 서브넷에 두고 계층별 보안 그룹으로 분리 |
+| 서버 설정을 user_data와 수동 작업으로 처리 | Ansible 플레이북으로 서버 구성, nginx·모니터링 스택 배포 |
+| 알림별 대응 매뉴얼(런북) 없음 | Ansible 런북 플레이북 (앱·DB 재시작, 디스크 정리) |
+| 서버 장애만 실습, 서비스 레벨 장애는 없음 | 실제 시세 수집 앱으로 5xx·응답시간·데이터 갱신 중단 감지, k6 부하 시나리오 |
+| 디스크 알림 한 단계, 알림 Source 링크 안 열림, Grafana 설정 수동 | 알림 단계 분리, `--web.external-url`, Grafana provisioning |
+| root 액세스 키 사용 (장애 #5에서 발견) | IAM 사용자 / IAM Identity Center로 시작 |

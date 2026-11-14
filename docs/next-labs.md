@@ -1,5 +1,7 @@
 # 다음 실습에 추가하면 좋을 것들
 
+> **이전 계획입니다.** 이 문서의 내용(Ansible 구성 관리 등)은 후속 프로젝트 [aws-network-incident-monitoring-lab](https://github.com/ekimje/aws-network-incident-monitoring-lab)에서 진행합니다.
+
 지금의 VPC 네트워크 위에 EC2를 올리고 **Ansible로 설정 관리**를 실습하거나, 다른 AWS 실습으로 넓혀갈 때 추가하면 좋은 항목입니다. 필요한 순서대로 정리했습니다.
 
 > 이 문서의 코드는 **예시**입니다. 기존 `.tf` 파일은 건드리지 않았으니, 쓸 때 새 파일(`sg.tf`, `ec2.tf` 등)로 추가하세요.
